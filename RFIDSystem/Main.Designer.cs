@@ -39,8 +39,8 @@
             this.tabPage3 = new System.Windows.Forms.TabPage();
             this.btnRefresh = new System.Windows.Forms.Button();
             this.button1 = new System.Windows.Forms.Button();
-            this.btnExport = new System.Windows.Forms.Button();
-            this.btnOpen = new System.Windows.Forms.Button();
+            this.btnExportRegistered = new System.Windows.Forms.Button();
+            this.btnExportActive = new System.Windows.Forms.Button();
             this.tabPage4 = new System.Windows.Forms.TabPage();
             this.lblTag = new System.Windows.Forms.Label();
             this.lblChecking = new System.Windows.Forms.Label();
@@ -100,6 +100,7 @@
             this.dataActive.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
             this.dataActive.Size = new System.Drawing.Size(1246, 543);
             this.dataActive.TabIndex = 1;
+            this.dataActive.CellValueChanged += new System.Windows.Forms.DataGridViewCellEventHandler(this.dataActive_CellValueChanged);
             // 
             // tabPage2
             // 
@@ -145,8 +146,8 @@
             // 
             this.tabPage3.Controls.Add(this.btnRefresh);
             this.tabPage3.Controls.Add(this.button1);
-            this.tabPage3.Controls.Add(this.btnExport);
-            this.tabPage3.Controls.Add(this.btnOpen);
+            this.tabPage3.Controls.Add(this.btnExportRegistered);
+            this.tabPage3.Controls.Add(this.btnExportActive);
             this.tabPage3.Location = new System.Drawing.Point(4, 24);
             this.tabPage3.Name = "tabPage3";
             this.tabPage3.Padding = new System.Windows.Forms.Padding(3);
@@ -163,7 +164,7 @@
             this.btnRefresh.FlatStyle = System.Windows.Forms.FlatStyle.Popup;
             this.btnRefresh.Font = new System.Drawing.Font("Ubuntu Mono", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnRefresh.ForeColor = System.Drawing.Color.White;
-            this.btnRefresh.Location = new System.Drawing.Point(102, 7);
+            this.btnRefresh.Location = new System.Drawing.Point(192, 6);
             this.btnRefresh.Name = "btnRefresh";
             this.btnRefresh.Size = new System.Drawing.Size(85, 26);
             this.btnRefresh.TabIndex = 4;
@@ -179,7 +180,7 @@
             this.button1.FlatStyle = System.Windows.Forms.FlatStyle.Popup;
             this.button1.Font = new System.Drawing.Font("Ubuntu Mono", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.button1.ForeColor = System.Drawing.Color.White;
-            this.button1.Location = new System.Drawing.Point(102, 41);
+            this.button1.Location = new System.Drawing.Point(192, 41);
             this.button1.Name = "button1";
             this.button1.Size = new System.Drawing.Size(85, 26);
             this.button1.TabIndex = 2;
@@ -187,35 +188,35 @@
             this.button1.UseVisualStyleBackColor = true;
             this.button1.Click += new System.EventHandler(this.button1_Click);
             // 
-            // btnExport
+            // btnExportRegistered
             // 
-            this.btnExport.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btnExport.BackgroundImage")));
-            this.btnExport.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
-            this.btnExport.FlatStyle = System.Windows.Forms.FlatStyle.Popup;
-            this.btnExport.Font = new System.Drawing.Font("Ubuntu Mono", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btnExport.ForeColor = System.Drawing.Color.White;
-            this.btnExport.Location = new System.Drawing.Point(9, 41);
-            this.btnExport.Name = "btnExport";
-            this.btnExport.Size = new System.Drawing.Size(87, 26);
-            this.btnExport.TabIndex = 1;
-            this.btnExport.Text = "Exportovat";
-            this.btnExport.UseVisualStyleBackColor = true;
-            this.btnExport.Click += new System.EventHandler(this.btnExport_Click);
+            this.btnExportRegistered.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btnExportRegistered.BackgroundImage")));
+            this.btnExportRegistered.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
+            this.btnExportRegistered.FlatStyle = System.Windows.Forms.FlatStyle.Popup;
+            this.btnExportRegistered.Font = new System.Drawing.Font("Ubuntu Mono", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnExportRegistered.ForeColor = System.Drawing.Color.White;
+            this.btnExportRegistered.Location = new System.Drawing.Point(6, 6);
+            this.btnExportRegistered.Name = "btnExportRegistered";
+            this.btnExportRegistered.Size = new System.Drawing.Size(87, 61);
+            this.btnExportRegistered.TabIndex = 1;
+            this.btnExportRegistered.Text = "Exportovat Registrované";
+            this.btnExportRegistered.UseVisualStyleBackColor = true;
+            this.btnExportRegistered.Click += new System.EventHandler(this.btnExportRegistered_Click);
             // 
-            // btnOpen
+            // btnExportActive
             // 
-            this.btnOpen.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btnOpen.BackgroundImage")));
-            this.btnOpen.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
-            this.btnOpen.FlatStyle = System.Windows.Forms.FlatStyle.Popup;
-            this.btnOpen.Font = new System.Drawing.Font("Ubuntu Mono", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btnOpen.ForeColor = System.Drawing.Color.White;
-            this.btnOpen.Location = new System.Drawing.Point(9, 7);
-            this.btnOpen.Name = "btnOpen";
-            this.btnOpen.Size = new System.Drawing.Size(87, 26);
-            this.btnOpen.TabIndex = 0;
-            this.btnOpen.Text = "Otevřít";
-            this.btnOpen.UseVisualStyleBackColor = true;
-            this.btnOpen.Click += new System.EventHandler(this.btnOpen_Click);
+            this.btnExportActive.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btnExportActive.BackgroundImage")));
+            this.btnExportActive.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
+            this.btnExportActive.FlatStyle = System.Windows.Forms.FlatStyle.Popup;
+            this.btnExportActive.Font = new System.Drawing.Font("Ubuntu Mono", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnExportActive.ForeColor = System.Drawing.Color.White;
+            this.btnExportActive.Location = new System.Drawing.Point(99, 6);
+            this.btnExportActive.Name = "btnExportActive";
+            this.btnExportActive.Size = new System.Drawing.Size(87, 61);
+            this.btnExportActive.TabIndex = 0;
+            this.btnExportActive.Text = "Exportovat Aktivní";
+            this.btnExportActive.UseVisualStyleBackColor = true;
+            this.btnExportActive.Click += new System.EventHandler(this.btnExportActive_Click);
             // 
             // tabPage4
             // 
@@ -355,8 +356,8 @@
         private System.Windows.Forms.TabPage tabPage4;
         private System.Windows.Forms.DataGridView dataActive;
         private System.Windows.Forms.DataGridView dataRegistered;
-        private System.Windows.Forms.Button btnOpen;
-        private System.Windows.Forms.Button btnExport;
+        private System.Windows.Forms.Button btnExportActive;
+        private System.Windows.Forms.Button btnExportRegistered;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.ComboBox comboBox1;
         private System.Windows.Forms.RichTextBox txtRFIDOut;

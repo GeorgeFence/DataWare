@@ -37,7 +37,7 @@ namespace RFIDSystem
         public static List<string> AditionalActiveValues = new List<string>();
 
         //PostgreSQL
-        public static string connectionString = "";
+        public static string connectionString = "Server=" + Properties.Settings.Default["PgIp"] + ";Port=" + Properties.Settings.Default["PgPort"] + ";Database=" + Properties.Settings.Default["PgDatabase"] + ";User Id=" + Properties.Settings.Default["PgUsername"] + ";Password=" + Properties.Settings.Default["PgPassword"] + ";";
         public static NpgsqlConnection conn = new NpgsqlConnection(connectionString);
         public static NpgsqlDataAdapter da = new NpgsqlDataAdapter();
         public static DataSet ds;
@@ -48,38 +48,6 @@ namespace RFIDSystem
         public Main()
         {
             InitializeComponent();
-        }
-
-        private void btnOpen_Click(object sender, EventArgs e)
-        {
-            bool Do = false;
-
-            OpenFileDialog dialog = new OpenFileDialog();
-            dialog.Filter = "Excel Workbook |*xlsx|Excel workbook |*xls";
-            if (dialog.ShowDialog() == DialogResult.OK)
-            {
-                var stream = File.Open(dialog.FileName, FileMode.Open, FileAccess.Read);
-                using (IExcelDataReader ExReader = ExcelReaderFactory.CreateReader(stream))
-                {
-                    DataSet result = ExReader.AsDataSet(new ExcelDataSetConfiguration()
-                    {
-                        ConfigureDataTable = (_) => new ExcelDataTableConfiguration()
-                    });
-                    datacollection = result.Tables;
-                    Do = true;
-                }
-                
-            }
-            if(Do)
-            {
-                DataTable Act = datacollection["Aktivní"];
-                dataActive.DataSource = Act;
-
-                DataTable Reg = datacollection["Registrovaní"];
-                dataRegistered.DataSource = Reg;
-            }
-
-            
         }
 
         private void Main_Load(object sender, EventArgs e)
@@ -124,7 +92,6 @@ namespace RFIDSystem
                     }
                     timerrefreshDB.Start();
                     txtRFIDOut.Text = Properties.Settings.Default["PgTableActive"] + " " + Properties.Settings.Default["PgTableRegistered"];
-
                 }
             }
             catch (Exception ex)
@@ -164,10 +131,60 @@ namespace RFIDSystem
         {
 
         }
-
-        private void btnExport_Click(object sender, EventArgs e)
+        private void btnExportActive_Click(object sender, EventArgs e)
         {
-            
+            Microsoft.Office.Interop.Excel._Application app = new Microsoft.Office.Interop.Excel.Application();
+            Microsoft.Office.Interop.Excel._Workbook workbook = app.Workbooks.Add(Type.Missing);
+            Microsoft.Office.Interop.Excel._Worksheet worksheet = null;
+            app.Visible = true;
+            worksheet = workbook.Sheets["Sheet1"];
+            worksheet = workbook.ActiveSheet;
+            for (int i = 1; i < dataActive.Columns.Count + 1; i++)
+            {
+                worksheet.Cells[1, i] = dataActive.Columns[i - 1].HeaderText;
+            }
+            for (int i = 0; i < dataActive.Rows.Count - 1; i++)
+            {
+                for (int j = 0; j < dataActive.Columns.Count; j++)
+                {
+                    if (dataActive.Rows[i].Cells[j].Value != null)
+                    {
+                        worksheet.Cells[i + 2, j + 1] = dataActive.Rows[i].Cells[j].Value.ToString();
+                    }
+                    else
+                    {
+                        worksheet.Cells[i + 2, j + 1] = "";
+                    }
+                }
+            }
+        }
+
+        private void btnExportRegistered_Click(object sender, EventArgs e)
+        {
+            Microsoft.Office.Interop.Excel._Application app = new Microsoft.Office.Interop.Excel.Application();
+            Microsoft.Office.Interop.Excel._Workbook workbook = app.Workbooks.Add(Type.Missing);
+            Microsoft.Office.Interop.Excel._Worksheet worksheet = null;
+            app.Visible = true;
+            worksheet = workbook.Sheets["Sheet1"];
+            worksheet = workbook.ActiveSheet;
+            for (int i = 1; i < dataRegistered.Columns.Count + 1; i++)
+            {
+                worksheet.Cells[1, i] = dataRegistered.Columns[i - 1].HeaderText;
+            }
+            for (int i = 0; i < dataRegistered.Rows.Count - 1; i++)
+            {
+                for (int j = 0; j < dataRegistered.Columns.Count; j++)
+                {
+                    if (dataRegistered.Rows[i].Cells[j].Value != null)
+                    {
+                        worksheet.Cells[i + 2, j + 1] = dataRegistered.Rows[i].Cells[j].Value.ToString();
+                    }
+                    else
+                    {
+                        worksheet.Cells[i + 2, j + 1] = "";
+                    }
+                }
+            }
         }
 
         private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
@@ -482,21 +499,23 @@ namespace RFIDSystem
 
         private void dataActive_CellValueChanged(object sender, DataGridViewCellEventArgs e)
         {
-            timerrefreshDB.Stop();
-            string comm = "UPDATE " + Properties.Settings.Default["PgTableActive"] + " SET \"" + dataActive.Columns[e.ColumnIndex].HeaderText + "\"='" + dataActive.Rows[e.RowIndex].Cells[e.ColumnIndex].Value + "' WHERE \"Jméno\"='" + dataActive.Rows[e.RowIndex].Cells["Jméno"].Value + "' AND \"Příjmení\"='" + dataActive.Rows[e.RowIndex].Cells["Příjmení"].Value + "'";
-            NpgsqlConnection conn = new NpgsqlConnection(connectionString);
-            conn.Open();
-            DataGridViewRow row = dataRegistered.Rows[dataRegistered.Rows.Count - 1];
-            MessageBox.Show(comm);
-            using (NpgsqlCommand cmd = new NpgsqlCommand(comm, conn))
+            if(dataActive.Columns[e.ColumnIndex].HeaderText == "Aktivní")
             {
-                try
+                timerrefreshDB.Stop();
+                string comm = "DELETE FROM " + Properties.Settings.Default["PgTableActive"] + " WHERE \"Id\"='" + dataActive.Rows[e.RowIndex].Cells["Id"].Value + "' AND \"Jméno\"='" + dataActive.Rows[e.RowIndex].Cells["Jméno"].Value + "' AND \"Příjmení\"='" + dataActive.Rows[e.RowIndex].Cells["Příjmení"].Value + "'";
+                NpgsqlConnection conn = new NpgsqlConnection(connectionString);
+                conn.Open();
+                MessageBox.Show(comm);
+                using (NpgsqlCommand cmd = new NpgsqlCommand(comm, conn))
                 {
-                    cmd.ExecuteNonQuery();
+                    try
+                    {
+                        cmd.ExecuteNonQuery();
+                    }
+                    catch (Exception ex) { txtRFIDOut.Text = ex.Message; }
                 }
-                catch (Exception ex) { txtRFIDOut.Text = ex.Message; }
-            }
-            timerrefreshDB.Start();
+                timerrefreshDB.Start();
+            } 
         }
 
         public void wait(int milliseconds)
@@ -521,6 +540,5 @@ namespace RFIDSystem
                 Application.DoEvents();
             }
         }
-
     }
 }
