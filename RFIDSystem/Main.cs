@@ -45,9 +45,14 @@ namespace RFIDSystem
         public static DataTable refreshDtAct = new DataTable();
         public static DataTable newUser = new DataTable();
 
+        public static ImageList image = new ImageList();
+
         public Main()
         {
             InitializeComponent();
+            image.Images.Add(Properties.Resources.gradientLeft);
+            filterActive.SetColumns(dataActive.Columns);
+            filterRegistered.SetColumns(dataRegistered.Columns);
         }
 
         private void Main_Load(object sender, EventArgs e)
@@ -91,7 +96,6 @@ namespace RFIDSystem
                         }
                     }
                     timerrefreshDB.Start();
-                    txtRFIDOut.Text = Properties.Settings.Default["PgTableActive"] + " " + Properties.Settings.Default["PgTableRegistered"];
                 }
             }
             catch (Exception ex)
@@ -122,10 +126,16 @@ namespace RFIDSystem
 
             }
         }
-        public void Refresh(ref DataGridView d, string settTable)
+        public void Refresh(ref Zuby.ADGV.AdvancedDataGridView d, string settTable)
         {
+            int saveRow = 0;
+            if (d.SelectedRows.Count > 0)
+                saveRow = d.SelectedRows[0].Index;
             d.DataSource = GetData("SELECT * FROM " + Properties.Settings.Default[settTable]);
-                
+
+            if (saveRow != 0 && saveRow < d.Rows.Count)
+                d.Rows[0].Selected = false;
+                d.Rows[saveRow].Selected = true;
         }
         private void tabPage3_Click(object sender, EventArgs e)
         {
@@ -185,17 +195,6 @@ namespace RFIDSystem
                     }
                 }
             }
-        }
-
-        private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            RFIDPort = new SerialPort();
-            RFIDPort.PortName = comboBox1.Text;//Set your board COM
-            RFIDPort.BaudRate = 9600;
-            RFIDPort.Open();
-            comboBox1.Enabled = false;
-            IsPort = true;
-            
         }
 
         private void Tick_Tick(object sender, EventArgs e)
@@ -282,7 +281,7 @@ namespace RFIDSystem
                     {
                         cmd.ExecuteNonQuery();
                     }
-                    catch (Exception ex) { txtRFIDOut.Text = ex.Message; }
+                    catch (Exception ex) { MessageBox.Show(ex.Message + "\n" + Translate(ex.Message.ToString(), "cs", "en"), "RFIDSystem"); }
                 }
             }
             catch(Exception ex)
@@ -343,135 +342,103 @@ namespace RFIDSystem
         {
             MessageBox.Show("Error appeared in Data Grid View. More info : "+ e.Exception.Message.ToString() + "\n" + Translate(e.Exception.Message.ToString(), "cs", "en"), "RFIDSystem - DataGridView", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
-
-        public static bool AreTablesTheSame(DataTable tbl1, DataTable tbl2)
-        {
-            if (tbl1.Rows.Count != tbl2.Rows.Count || tbl1.Columns.Count != tbl2.Columns.Count)
-                return false;
-
-
-            for (int i = 0; i < tbl1.Rows.Count; i++)
-            {
-                for (int c = 0; c < tbl1.Columns.Count; c++)
-                {
-                    if (!Equals(tbl1.Rows[i][c], tbl2.Rows[i][c]))
-                        return false;
-                }
-            }
-            return true;
-        }
-
-
         public static List<string>Values = new List<string>();
         private void timerrefreshDB_Tick(object sender, EventArgs e)
         {
-            if(refreshDtReg != GetData("SELECT * FROM " + Properties.Settings.Default["PgTableRegistered"]))
+            Refresh(ref dataActive, "PgTableActive");
+            Refresh(ref dataRegistered, "PgTableRegistered");
+            newUser = GetData("SELECT * FROM readertemp");
+            if (newUser.Rows.Count != 0)
             {
-                Refresh(ref dataRegistered, "PgTableRegistered");
-                refreshDtReg = GetData("SELECT * FROM " + Properties.Settings.Default["PgTableRegistered"]);
-            }
-
-            if (refreshDtAct != GetData("SELECT * FROM " + Properties.Settings.Default["PgTableActive"]))
-            {
-                Refresh(ref dataActive, "PgTableActive");
-                refreshDtAct = GetData("SELECT * FROM " + Properties.Settings.Default["PgTableActive"]);
-            }
-
-            if (newUser != GetData("SELECT * FROM readertemp"))
-            {
-                newUser = GetData("SELECT * FROM readertemp");
-                if(newUser.Rows.Count != 0)
+                string comm = "DELETE FROM readertemp WHERE \"Id\"='" + newUser.Rows[0][0].ToString() + "'";
+                try
                 {
-                    string comm = "DELETE FROM readertemp WHERE \"Id\"='" + newUser.Rows[0][0].ToString() + "'";
+                    NpgsqlConnection conn = new NpgsqlConnection(connectionString);
+                    conn.Open();
+                    using (NpgsqlCommand cmd = new NpgsqlCommand(comm, conn))
+                    {
+                        try
+                        {
+                            cmd.ExecuteNonQuery();
+                        }
+                        catch (Exception ex) { MessageBox.Show(ex.Message + "\n" + Translate(ex.Message.ToString(), "cs", "en"), "RFIDSystem"); }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message + "\n" + Translate(ex.Message.ToString(), "cs", "en"), "RFIDSystem");
+                }
+
+                bool Exists = false;
+                int RowNum = 0;
+                for (int i = 0; i < dataRegistered.Rows.Count - 1; i++)
+                {
+                    if (dataRegistered.Rows[i].Cells["Id"].Value.ToString() == newUser.Rows[0][0].ToString())
+                    {
+                        RowNum = i;
+                        Exists = true;
+                        break;
+                    }
+                }
+
+                if (!Exists)
+                {
+                    User user = new User(true, newUser.Rows[0][0].ToString());
+                    user.Show();
+                }
+                else
+                {
+                    for (int i = 0; i < AditionalActiveValues.Count; i++)
+                    {
+                        Value v = new Value(AditionalActiveValues[i]);
+                        v.Show();
+                        while (v.Val == "")
+                        {
+                            wait(500);
+                        }
+                    }
+
+                    string command = "INSERT INTO " + Properties.Settings.Default["PgTableActive"] + " VALUES('" + dataRegistered.Rows[RowNum].Cells["Id"].Value.ToString() + "','" + dataRegistered.Rows[RowNum].Cells["Jméno"].Value.ToString() + "','" + dataRegistered.Rows[RowNum].Cells["Příjmení"].Value.ToString() + "','" + dataRegistered.Rows[RowNum].Cells["Email"].Value.ToString() + "','" + dataRegistered.Rows[RowNum].Cells["Telefonní číslo"].Value.ToString() + "','" + dataRegistered.Rows[RowNum].Cells["Datum narození"].Value.ToString() + "', 'true'";
+                    if (AditionalActiveValues.Count == 0)
+                    {
+
+                    }
+                    else
+                    {
+                        for (int i = 0; i < AditionalActiveValues.Count(); i++)
+                        {
+                            if (i == 0)
+                            {
+                                command = command + ", ";
+                            }
+                            if (i == AditionalActiveValues.Count() - 1)
+                            {
+                                command = command += "'" + Values[i] + "')";
+                            }
+                            else
+                            {
+                                command = command += "'" + Values[i] + "',";
+                            }
+                        }
+                    }
+                    Values = new List<string>();
+                    MessageBox.Show(command);
                     try
                     {
                         NpgsqlConnection conn = new NpgsqlConnection(connectionString);
                         conn.Open();
-                        using (NpgsqlCommand cmd = new NpgsqlCommand(comm, conn))
+                        using (NpgsqlCommand cmd = new NpgsqlCommand(command, conn))
                         {
                             try
                             {
                                 cmd.ExecuteNonQuery();
                             }
-                            catch (Exception ex) { txtRFIDOut.Text = ex.Message; }
+                            catch (Exception ex) { MessageBox.Show(ex.Message + "\n" + Translate(ex.Message.ToString(), "cs", "en"), "RFIDSystem"); }
                         }
                     }
                     catch (Exception ex)
                     {
                         MessageBox.Show(ex.Message + "\n" + Translate(ex.Message.ToString(), "cs", "en"), "RFIDSystem");
-                    }
-
-                    bool Exists = false;
-                    int RowNum = 0;
-                    for (int i = 0; i < dataRegistered.Rows.Count - 1; i++)
-                    {
-                        if(dataRegistered.Rows[i].Cells["Id"].Value.ToString() == newUser.Rows[0][0].ToString())
-                        {
-                            RowNum = i;
-                            Exists = true;
-                            break;
-                        }
-                    }
-
-                    if (!Exists)
-                    {
-                        User user = new User(true, newUser.Rows[0][0].ToString());
-                        user.Show();
-                    }
-                    else
-                    {
-                        for (int i = 0;i< AditionalActiveValues.Count; i++)
-                        {
-                            Value v = new Value(AditionalActiveValues[i]);
-                            v.Show();
-                            while(v.Val == "")
-                            {
-                                wait(500);
-                            }
-                        }
-
-                        string command = "INSERT INTO " + Properties.Settings.Default["PgTableActive"] + " VALUES('" + dataRegistered.Rows[RowNum].Cells["Id"].Value.ToString() + "','" + dataRegistered.Rows[RowNum].Cells["Jméno"].Value.ToString() + "','" + dataRegistered.Rows[RowNum].Cells["Příjmení"].Value.ToString() + "','" + dataRegistered.Rows[RowNum].Cells["Email"].Value.ToString() + "','" + dataRegistered.Rows[RowNum].Cells["Telefonní číslo"].Value.ToString() + "','" + dataRegistered.Rows[RowNum].Cells["Datum narození"].Value.ToString() + "', 'true'";
-                        if (AditionalActiveValues.Count == 0)
-                        {
-
-                        }
-                        else
-                        {
-                            for (int i = 0; i < AditionalActiveValues.Count(); i++)
-                            {
-                                if (i == 0)
-                                {
-                                    command = command + ", ";
-                                }
-                                if (i == AditionalActiveValues.Count() - 1)
-                                {
-                                    command = command += "'" +Values[i] + "')";
-                                }
-                                else
-                                {
-                                    command = command += "'" + Values[i] + "',";
-                                }
-                            }
-                        }
-                        Values = new List<string>();
-                        MessageBox.Show(command );
-                        try
-                        {
-                            NpgsqlConnection conn = new NpgsqlConnection(connectionString);
-                            conn.Open();
-                            using (NpgsqlCommand cmd = new NpgsqlCommand(command, conn))
-                            {
-                                try
-                                {
-                                    cmd.ExecuteNonQuery();
-                                }
-                                catch (Exception ex) { MessageBox.Show(ex.Message + "\n" + Translate(ex.Message.ToString(), "cs", "en"), "RFIDSystem"); }
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            MessageBox.Show(ex.Message + "\n" + Translate(ex.Message.ToString(), "cs", "en"), "RFIDSystem");
-                        }
                     }
                 }
             }
@@ -512,7 +479,7 @@ namespace RFIDSystem
                     {
                         cmd.ExecuteNonQuery();
                     }
-                    catch (Exception ex) { txtRFIDOut.Text = ex.Message; }
+                    catch (Exception ex) { MessageBox.Show(ex.Message + "\n" + Translate(ex.Message.ToString(), "cs", "en"), "RFIDSystem"); }
                 }
                 timerrefreshDB.Start();
             } 
@@ -539,6 +506,235 @@ namespace RFIDSystem
             {
                 Application.DoEvents();
             }
+        }
+
+        private void aktivníToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Microsoft.Office.Interop.Excel._Application app = new Microsoft.Office.Interop.Excel.Application();
+            Microsoft.Office.Interop.Excel._Workbook workbook = app.Workbooks.Add(Type.Missing);
+            Microsoft.Office.Interop.Excel._Worksheet worksheet = null;
+            app.Visible = true;
+            worksheet = workbook.Sheets["Sheet1"];
+            worksheet = workbook.ActiveSheet;
+            for (int i = 1; i < dataActive.Columns.Count + 1; i++)
+            {
+                worksheet.Cells[1, i] = dataActive.Columns[i - 1].HeaderText;
+            }
+            for (int i = 0; i < dataActive.Rows.Count - 1; i++)
+            {
+                for (int j = 0; j < dataActive.Columns.Count; j++)
+                {
+                    if (dataActive.Rows[i].Cells[j].Value != null)
+                    {
+                        worksheet.Cells[i + 2, j + 1] = dataActive.Rows[i].Cells[j].Value.ToString();
+                    }
+                    else
+                    {
+                        worksheet.Cells[i + 2, j + 1] = "";
+                    }
+                }
+            }
+        }
+
+        private void registrovaníToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Microsoft.Office.Interop.Excel._Application app = new Microsoft.Office.Interop.Excel.Application();
+            Microsoft.Office.Interop.Excel._Workbook workbook = app.Workbooks.Add(Type.Missing);
+            Microsoft.Office.Interop.Excel._Worksheet worksheet = null;
+            app.Visible = true;
+            worksheet = workbook.Sheets["Sheet1"];
+            worksheet = workbook.ActiveSheet;
+            for (int i = 1; i < dataRegistered.Columns.Count + 1; i++)
+            {
+                worksheet.Cells[1, i] = dataRegistered.Columns[i - 1].HeaderText;
+            }
+            for (int i = 0; i < dataRegistered.Rows.Count - 1; i++)
+            {
+                for (int j = 0; j < dataRegistered.Columns.Count; j++)
+                {
+                    if (dataRegistered.Rows[i].Cells[j].Value != null)
+                    {
+                        worksheet.Cells[i + 2, j + 1] = dataRegistered.Rows[i].Cells[j].Value.ToString();
+                    }
+                    else
+                    {
+                        worksheet.Cells[i + 2, j + 1] = "";
+                    }
+                }
+            }
+        }
+
+
+        private void dataToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            timerrefreshDB.Stop();
+            Properties.Settings.Default["PgIp"] = "";
+            Properties.Settings.Default["PgPort"] = null;
+            Properties.Settings.Default["PgUsername"] = null;
+            Properties.Settings.Default["PgPassword"] = null;
+            Properties.Settings.Default["PgDatabase"] = null;
+            Properties.Settings.Default["PgTableRegistered"] = null;
+            Properties.Settings.Default["PgTableActive"] = null;
+            Properties.Settings.Default.Save();
+            Setup s = new Setup();
+            MessageBox.Show("Zavírání aplikace", "RFID System");
+            s.Show();
+            Hide();
+        }
+
+        private void nastaveníPřipojeníToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Setup s = new Setup();
+            s.Show();
+        }
+
+        private void aboutRFIDSystemToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            info i = new info();
+            i.Show();
+        }
+
+        private void ukončitToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Application.Exit();
+        }
+
+        private void dataActive_SelectionChanged(object sender, EventArgs e)
+        {
+            if(tabControl1.SelectedIndex == 0)
+            {
+                txtEditVal1.Enabled = true;
+                txtEditVal2.Enabled = true;
+                txtEditVal3.Enabled = true;
+                if (dataActive.SelectedRows.Count > 0 && dataActive.SelectedRows[0].Cells[0].Value != null)
+                {
+                    txtEditID.Text = dataActive.SelectedRows[0].Cells[0].Value.ToString();
+                    txtEditName.Text = dataActive.SelectedRows[0].Cells[1].Value.ToString();
+                    txtEditSurname.Text = dataActive.SelectedRows[0].Cells[2].Value.ToString();
+                    txtEditEmail.Text = dataActive.SelectedRows[0].Cells[3].Value.ToString();
+                    txtEditTel.Text = dataActive.SelectedRows[0].Cells[4].Value.ToString();
+                    txtEditBirthDay.Text = dataActive.SelectedRows[0].Cells[5].Value.ToString();
+                    if(AditionalActiveValues.Count == 1)
+                    {
+                        txtEditVal1.Text = dataActive.SelectedRows[0].Cells[AditionalActiveValues[0].ToString()].Value.ToString();
+                    }
+                    if(AditionalActiveValues.Count == 2)
+                    {
+                        txtEditVal1.Text = dataActive.SelectedRows[0].Cells[AditionalActiveValues[0].ToString()].Value.ToString();
+                        txtEditVal2.Text = dataActive.SelectedRows[0].Cells[AditionalActiveValues[1].ToString()].Value.ToString();
+                    }
+                    if(AditionalActiveValues.Count == 3)
+                    {
+                        txtEditVal1.Text = dataActive.SelectedRows[0].Cells[AditionalActiveValues[0].ToString()].Value.ToString();
+                        txtEditVal2.Text = dataActive.SelectedRows[0].Cells[AditionalActiveValues[1].ToString()].Value.ToString();
+                        txtEditVal3.Text = dataActive.SelectedRows[0].Cells[AditionalActiveValues[2].ToString()].Value.ToString();
+                    }
+                }
+            }
+        }
+        private void dataRegistered_SelectionChanged(object sender, EventArgs e)
+        {
+            if (tabControl1.SelectedIndex == 1)
+            {
+                txtEditVal1.Enabled = false;
+                txtEditVal2.Enabled = false;
+                txtEditVal3.Enabled = false;
+
+                if (dataRegistered.SelectedRows.Count > 0 && dataRegistered.SelectedRows[0].Cells[0].Value != null)
+                {
+                    txtEditID.Text = dataRegistered.SelectedRows[0].Cells[0].Value.ToString();
+                    txtEditName.Text = dataRegistered.SelectedRows[0].Cells[1].Value.ToString();
+                    txtEditSurname.Text = dataRegistered.SelectedRows[0].Cells[2].Value.ToString();
+                    txtEditEmail.Text = dataRegistered.SelectedRows[0].Cells[3].Value.ToString();
+                    txtEditTel.Text = dataRegistered.SelectedRows[0].Cells[4].Value.ToString();
+                    txtEditBirthDay.Text = dataRegistered.SelectedRows[0].Cells[5].Value.ToString();
+                }
+            }
+        }
+
+        private void filterActive_Search(object sender, Zuby.ADGV.AdvancedDataGridViewSearchToolBarSearchEventArgs e)
+        {
+            bool restartsearch = true;
+            int startColumn = 0;
+            int startRow = 0;
+            if (!e.FromBegin)
+            {
+                bool endcol = dataActive.CurrentCell.ColumnIndex + 1 >= dataActive.ColumnCount;
+                bool endrow = dataActive.CurrentCell.RowIndex + 1 >= dataActive.RowCount;
+
+                if (endcol && endrow)
+                {
+                    startColumn = dataActive.CurrentCell.ColumnIndex;
+                    startRow = dataActive.CurrentCell.RowIndex;
+                }
+                else
+                {
+                    startColumn = endcol ? 0 : dataActive.CurrentCell.ColumnIndex + 1;
+                    startRow = dataActive.CurrentCell.RowIndex + (endcol ? 1 : 0);
+                }
+            }
+            DataGridViewCell c = dataActive.FindCell(
+                e.ValueToSearch,
+                e.ColumnToSearch != null ? e.ColumnToSearch.Name : null,
+                startRow,
+                startColumn,
+                e.WholeWord,
+                e.CaseSensitive);
+            if (c == null && restartsearch)
+                c = dataActive.FindCell(
+                    e.ValueToSearch,
+                    e.ColumnToSearch != null ? e.ColumnToSearch.Name : null,
+                    0,
+                    0,
+                    e.WholeWord,
+                    e.CaseSensitive);
+            if (c != null)
+                dataActive.CurrentCell = c;
+        }
+
+        private void filterRegistered_Search(object sender, Zuby.ADGV.AdvancedDataGridViewSearchToolBarSearchEventArgs e)
+        {
+            bool restartsearch = true;
+            int startColumn = 0;
+            int startRow = 0;
+            if (!e.FromBegin)
+            {
+                bool endcol = dataRegistered.CurrentCell.ColumnIndex + 1 >= dataRegistered.ColumnCount;
+                bool endrow = dataRegistered.CurrentCell.RowIndex + 1 >= dataRegistered.RowCount;
+
+                if (endcol && endrow)
+                {
+                    startColumn = dataRegistered.CurrentCell.ColumnIndex;
+                    startRow = dataRegistered.CurrentCell.RowIndex;
+                }
+                else
+                {
+                    startColumn = endcol ? 0 : dataRegistered.CurrentCell.ColumnIndex + 1;
+                    startRow = dataRegistered.CurrentCell.RowIndex + (endcol ? 1 : 0);
+                }
+            }
+            DataGridViewCell c = dataRegistered.FindCell(
+                e.ValueToSearch,
+                e.ColumnToSearch != null ? e.ColumnToSearch.Name : null,
+                startRow,
+                startColumn,
+                e.WholeWord,
+                e.CaseSensitive);
+            if (c == null && restartsearch)
+                c = dataRegistered.FindCell(
+                    e.ValueToSearch,
+                    e.ColumnToSearch != null ? e.ColumnToSearch.Name : null,
+                    0,
+                    0,
+                    e.WholeWord,
+                    e.CaseSensitive);
+            if (c != null)
+                dataRegistered.CurrentCell = c;
+        }
+
+        private void dataRegistered_CellMouseClick_1(object sender, DataGridViewCellMouseEventArgs e)
+        {
+
         }
     }
 }

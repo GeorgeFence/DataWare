@@ -13,6 +13,7 @@
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Deterministic>true</Deterministic>
     <IsWebBootstrapper>false</IsWebBootstrapper>
+    <TargetFrameworkProfile />
     <PublishUrl>publish\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Disk</InstallFrom>
@@ -23,11 +24,11 @@
     <UpdatePeriodically>false</UpdatePeriodically>
     <UpdateRequired>false</UpdateRequired>
     <MapFileExtensions>true</MapFileExtensions>
-    <ApplicationRevision>0</ApplicationRevision>
-    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <ApplicationRevision>1</ApplicationRevision>
+    <ApplicationVersion>1.0.1.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
+    <PublishWizardCompleted>true</PublishWizardCompleted>
     <BootstrapperEnabled>true</BootstrapperEnabled>
-    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -51,7 +52,28 @@
   <PropertyGroup>
     <ApplicationIcon>logo.ico</ApplicationIcon>
   </PropertyGroup>
+  <PropertyGroup>
+    <ManifestCertificateThumbprint>7D07E0EA94E24550FE0FCBB157F206BCF4B1D024</ManifestCertificateThumbprint>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ManifestKeyFile>RFIDSystem_TemporaryKey.pfx</ManifestKeyFile>
+  </PropertyGroup>
+  <PropertyGroup>
+    <GenerateManifests>true</GenerateManifests>
+  </PropertyGroup>
+  <PropertyGroup>
+    <TargetZone>LocalIntranet</TargetZone>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationManifest>Properties\app.manifest</ApplicationManifest>
+  </PropertyGroup>
+  <PropertyGroup>
+    <SignManifests>true</SignManifests>
+  </PropertyGroup>
   <ItemGroup>
+    <Reference Include="AdvancedDataGridView, Version=1.2.29301.14, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\DG.AdvancedDataGridView.1.2.29301.14\lib\net40\AdvancedDataGridView.dll</HintPath>
+    </Reference>
     <Reference Include="ClosedXML, Version=0.104.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\ClosedXML.0.104.0-preview2\lib\netstandard2.0\ClosedXML.dll</HintPath>
     </Reference>
@@ -256,6 +278,7 @@
       <HintPath>..\packages\System.ValueTuple.4.5.0\lib\net47\System.ValueTuple.dll</HintPath>
     </Reference>
     <Reference Include="System.Web" />
+    <Reference Include="System.Web.Extensions" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -277,6 +300,12 @@
     </Compile>
     <Compile Include="CreateTable.Designer.cs">
       <DependentUpon>CreateTable.cs</DependentUpon>
+    </Compile>
+    <Compile Include="info.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="info.Designer.cs">
+      <DependentUpon>info.cs</DependentUpon>
     </Compile>
     <Compile Include="Load.cs">
       <SubType>Form</SubType>
@@ -313,6 +342,9 @@
     <EmbeddedResource Include="CreateTable.resx">
       <DependentUpon>CreateTable.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="info.resx">
+      <DependentUpon>info.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Load.resx">
       <DependentUpon>Load.cs</DependentUpon>
     </EmbeddedResource>
@@ -339,6 +371,7 @@
       <DependentUpon>Value.cs</DependentUpon>
     </EmbeddedResource>
     <None Include="packages.config" />
+    <None Include="Properties\app.manifest" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
@@ -348,12 +381,15 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
+    <None Include="RFIDSystem_TemporaryKey.pfx" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="logo.ico" />
+    <None Include="Resources\gradientRight.png" />
+    <None Include="Resources\gradientLeft.png" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.7.2">
@@ -396,5 +432,6 @@
       <EmbedInteropTypes>True</EmbedInteropTypes>
     </COMReference>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -20,6 +20,7 @@
 #include <Ethernet.h>
 #include <utility/w5100.h>
 #include <Wiegand.h>
+#include <ArduinoJson.h>
 
 // verze čtečky
 byte version = 3;
@@ -27,13 +28,8 @@ byte version = 3;
 // seriové číslo čtečky
 unsigned long serial = 0x000000999;
 
-//Nastavení PostgreSQL databáse
-IPAddress PGIP(192,168,0,107);        // your PostgreSQL server IP
-
-const char user[] = "admin";       // your database user
-const char password[] = "123";   // your database password
-const char dbname[] = "rfid";         // your database name
-
+// Nastavení parametrů REST serveru
+char RESTserver[] = "192.168.1.104";
 
 // Default IP, když selže DHCP
 IPAddress ip(192, 168, 0, 177);
@@ -54,16 +50,15 @@ byte mac[] = { 0xAE, 0x00, 0x00, 0x00, 0x00, 0x00 };
 // Initialize the Ethernet client library
 EthernetClient client;
 
+
 // buffer
 #define BUFLEN 100
 char buf[BUFLEN + 1];
-
 
 // Objekt ctecky
 WIEGAND wg;
 
 byte dhcpRenew = 1;
-
 
 void setupEthernet() {
   // start the Ethernet connection:
@@ -121,19 +116,11 @@ void setup() {
 
   setupEthernet();
 
-  // inicializace databáse
-
-
   // inicializace čtečky
   wg.begin(PINd1, digitalPinToInterrupt(PINd1), PINd2, digitalPinToInterrupt(PINd2));
-  Serial.println("Done Setup");
-  signalOK();
 }
 
-
 void loop() {
-
-
   // pokud je něco na čtečce, zpracuj to
   if (wg.available()) {
     unsigned long code = wg.getCode();
@@ -181,7 +168,42 @@ void printIPAddress() {
 }
 
 byte callREST(unsigned long code) {
-  
+  if (client.connect(RESTserver, 3000)) {
+
+    // Create a JSON object
+    StaticJsonDocument<200> doc;
+
+    // Add the unsigned long value to the JSON object
+    doc["Id"] = code;
+
+    // Serialize the JSON object to a string
+    String jsonString;
+    serializeJson(doc, jsonString);
+
+    Serial.println(jsonString);
+
+    // Make an HTTP POST request
+    client.println("POST /readertemp HTTP/1.1");
+    client.print("Host: ");
+    client.println(RESTserver);
+    client.println("Content-Type: application/json");
+    client.print("Content-Length: ");
+    client.println(jsonString.length());
+    client.println();
+    client.println(jsonString);
+
+    delay(1000); // Wait for response
+
+    // Read and print response from server
+    while (client.available()) {
+      char c = client.read();
+      Serial.print(c);
+    }
+    client.stop();
+  } else {
+    Serial.println("Unable to connect to server");
+  }
+
   return 0;
 }
 
@@ -225,13 +247,13 @@ void signalFAILNet() {
 }
 
 void resetW5100() {
-  Serial.println("Resetovani ethernet shieldu");
+  Serial.print("Reseting ethernet shield...");
   delay(150);
   digitalWrite(RESET_PIN, LOW);  //low resets the W5100 chip
   delay(125);  //Keep this short, 25ms is good
   digitalWrite(RESET_PIN, HIGH);
   delay(1000);
-  Serial.print("Resetovani hotovo!");
+  Serial.print("Reset done");
   Serial.println();
-  Serial.println("Dignus zacal makat!");
+  Serial.println("Dignus starts working");
 }

@@ -67,62 +67,22 @@ namespace RFIDSystem
 
         private void Setup_Load(object sender, EventArgs e)
         {
-            panelPostgreSQL.Enabled = false;
             timer1.Start();
         }
 
         private void btnTest_Click(object sender, EventArgs e)
         {
-            txtIp.Text = "192.168.0.107";
+            txtIp.Text = "192.168.1.104";
             txtPort.Text = "5432";
             txtDatabaseName.Text = "rfid";
             txtUsername.Text = "admin";
             txtPassword.Text = "123";
             txtReg.Text = "rfid_registered";
             txtAct.Text = "rfid_active";
-            if(i == 0)
-            {
-                DrawStatus(Status.Unknown);
-                i++;
-            }
-            else if (i == 1)
-            {
-                DrawStatus(Status.Error, "Lol");
-                i++;
-            }
-            else if (i == 2)
-            {
-                DrawStatus(Status.Warning, "Need 50 celsius");
-                i++;
-            }
-            else if (i == 3)
-            {
-                DrawStatus(Status.Information, "Debil");
-                i++;
-            }
-            else if (i == 4)
-            {
-                DrawStatus(Status.Successfull, "Yaaay");
-                i++;
-            }
-            else if(i == 5)
-            {
-                i = 0;
-            }
         }
 
         private void chckPostgreSQL_CheckStateChanged(object sender, EventArgs e)
         {
-            if(chckPostgreSQL.Checked)
-            {
-                panelPostgreSQL.Enabled = true;
-                panelCustomDatabase.Enabled = false;
-            }
-            else if(!chckPostgreSQL.Checked)
-            {
-                panelCustomDatabase.Enabled = true;
-                panelPostgreSQL.Enabled = false;
-            }
         }
 
         private async void btnTestConnection_Click(object sender, EventArgs e)
@@ -286,5 +246,65 @@ namespace RFIDSystem
             }
         }
 
+        private void txtIp_KeyDown(object sender, KeyEventArgs e)
+        {
+            txtIp.Text = "";
+        }
+
+        private void txtIp_MouseClick(object sender, MouseEventArgs e)
+        {
+            if (txtIp.Text == "IP")
+            {
+                txtIp.Text = "";
+            }
+        }
+
+        private void txtPort_TextChanged(object sender, EventArgs e)
+        {
+            if (txtPort.Text == "PORT")
+            {
+                txtPort.Text = "";
+            }
+        }
+
+        private void txtUsername_TextChanged(object sender, EventArgs e)
+        {
+            if (txtUsername.Text == "USERNAME")
+            {
+                txtUsername.Text = "";
+            }
+        }
+
+        private void txtPassword_TextChanged(object sender, EventArgs e)
+        {
+            if (txtPassword.Text == "PASSWORD")
+            {
+                txtPassword.Text = "";
+            }
+        }
+
+        private void txtDatabaseName_TextChanged(object sender, EventArgs e)
+        {
+            if (txtDatabaseName.Text == "DATABASE")
+            {
+                txtDatabaseName.Text = "";
+            }
+        }
+
+        private void txtAct_TextChanged(object sender, EventArgs e)
+        {
+            if (txtAct.Text == "TABLEACTIVE")
+            {
+                txtAct.Text = "";
+            }
+        }
+
+        private void txtReg_TextChanged(object sender, EventArgs e)
+        {
+            if (txtReg.Text == "TABLEREGISTERED")
+            {
+                txtReg.Text = "";
+            }
+        }
     }
 }
