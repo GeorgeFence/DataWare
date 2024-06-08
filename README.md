@@ -1,4 +1,4 @@
-# RFIDSystem
+# DataWave
 ### Data system for [DIGNUS](https://www.dignus.cz/)
 
 > [!CAUTION] 
